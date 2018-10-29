@@ -254,7 +254,7 @@ public class InfiniteImage extends ImageView implements SensorEventListener {
      * @param Y
      */
     private void zoomImage(double Y) {
-        //TODO: 调用zoomchange 方法  解决 拉近放大问题
+        //TODO: 调用zoomchange 方法  解决 拉近放大问题  寻找中心位置
         centerPointX = currentBitmapWidth / 2;
         centerPointY = currentBitmapHeight;
         invalidate();
