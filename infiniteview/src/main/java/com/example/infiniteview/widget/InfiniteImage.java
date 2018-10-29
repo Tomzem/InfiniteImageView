@@ -5,7 +5,9 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
@@ -240,7 +242,7 @@ public class InfiniteImage extends ImageView implements SensorEventListener {
                 float X = (float) Math.toDegrees(event.values[0]);
                 double Y = (float) Math.toDegrees(event.values[1]);
                 float Z = (float) Math.toDegrees(event.values[2]);
-                Log.d(TAG, "xValue=" + X + "  yValue=" + Y + "   zValue=" + Z);
+//                Log.d(TAG, "xValue=" + X + "  yValue=" + Y + "   zValue=" + Z);
                 zoomImage(Y);
                 break;
         }
@@ -252,7 +254,12 @@ public class InfiniteImage extends ImageView implements SensorEventListener {
      * @param Y
      */
     private void zoomImage(double Y) {
-        //todo: 调用zoomchange 方法  解决 拉近放大问题
+        //TODO: 调用zoomchange 方法  解决 拉近放大问题
+        centerPointX = currentBitmapWidth / 2;
+        centerPointY = currentBitmapHeight;
+        invalidate();
+        Log.d(TAG, "zoomImage: centerPointX" + centerPointX + "centerPointY" + centerPointY);
+//        zoomChange(Y);
     }
 
     /**
@@ -389,6 +396,9 @@ public class InfiniteImage extends ImageView implements SensorEventListener {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        Paint paint = new Paint();
+        paint.setColor(Color.BLACK);
+        canvas.drawText("这里", centerPointX, centerPointY, paint);
         switch (currentStatus) {
             case STATUS_ZOOM_OUT:
             case STATUS_ZOOM_IN:
