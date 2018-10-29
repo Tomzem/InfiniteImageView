@@ -252,7 +252,7 @@ public class InfiniteImage extends ImageView implements SensorEventListener {
      * @param Y
      */
     private void zoomImage(double Y) {
-        
+        //todo: 调用zoomchange 方法  解决 拉近放大问题
     }
 
     /**
