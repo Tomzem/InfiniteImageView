@@ -1,19 +1,34 @@
-package com.example.infiniteview;
+package com.example.infiniteview.widget;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.PixelFormat;
+import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.net.Uri;
+import android.os.Handler;
+import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.webkit.URLUtil;
 import android.widget.ImageView;
+
+import com.example.infiniteview.R;
+import com.example.infiniteview.utils.ImageUtils;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+
 
 /**
  * 自定义的ImageView控制，可对图片进行多点触控缩放和拖动
@@ -142,6 +157,7 @@ public class InfiniteImage extends ImageView implements SensorEventListener{
     private Context mContext;
     private SensorManager mSensorManager;
     private Sensor mSensor;
+    private  Handler handler = new Handler();
 
     /**
      * InfiniteImage构造函数，将当前操作状态设为STATUS_INIT。
@@ -163,34 +179,72 @@ public class InfiniteImage extends ImageView implements SensorEventListener{
      */
     public void setImageBitmap(Bitmap bitmap) {
         sourceBitmap = bitmap;
-        initSensor();
-        invalidate();
-
+        handler.post(runnableUi);
     }
+
+    public void setImageResources(int resourcesID){
+        sourceBitmap = BitmapFactory.decodeResource(getResources(), resourcesID);
+        handler.post(runnableUi);
+    }
+
+    public void setImageDrawable(Drawable drawable){
+        sourceBitmap = ImageUtils.drawableToBitmap(drawable);
+        handler.post(runnableUi);
+    }
+
+    public void setImageURI(Uri uri){
+        try {
+            sourceBitmap = MediaStore.Images.Media.getBitmap(mContext.getContentResolver(), uri);
+            handler.post(runnableUi);
+        } catch (IOException e) {
+            e.printStackTrace();
+            setImageResources(R.drawable.ic_no_image);
+        }
+    }
+
+    public void setImageURL(String url){
+        ImageUtils.returnBitMap(url, new ImageUtils.OnDownLoadListener() {
+            @Override
+            public void onSuccess(Bitmap bitmap) {
+                sourceBitmap = bitmap;
+                handler.post(runnableUi);
+            }
+
+            @Override
+            public void onFail() {
+                setImageResources(R.drawable.ic_no_image);
+            }
+        });
+    }
+
 
     public void initSensor() {
         mSensorManager = (SensorManager) mContext.getSystemService(Context.SENSOR_SERVICE);
-        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
         mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     // 当传感器的值改变的时候回调该方法
     @Override
     public void onSensorChanged(SensorEvent event) {
-        float[] values = event.values;
-        StringBuilder sb = new StringBuilder();
-        sb.append("X方向的：");
-        sb.append(values[0]);
-        sb.append("\nY方向的：");
-        sb.append(values[1]);
-        sb.append("\nZ方向的：");
-        sb.append(values[2]);
-        Log.d(TAG, "onSensorChanged: " + sb.toString());
+        float zValue = Math.abs(event.values[0]);
+        float xValue = Math.abs(event.values[2]);
+        float yValue = Math.abs(event.values[1]);
+//        Log.d(TAG, "xValue=" + xValue + "  yValue=" + yValue + "   zValue=" + zValue);
+        checkRotateDirection(xValue, yValue, zValue);
+    }
+
+
+    private void checkRotateDirection(float X, float Y, float Z) {
+        int i = (int) (currentBitmapWidth/360);
+        int j = (int) (currentBitmapHeight/360);
+        calculate(-Z*i, Y*j);
     }
 
     // 当传感器精度发生改变时回调该方法
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
 
     }
 
@@ -207,6 +261,31 @@ public class InfiniteImage extends ImageView implements SensorEventListener{
             width = getWidth();
             height = getHeight();
         }
+    }
+
+    private void calculate(float xMove, float yMove){
+        if (lastXMove == -1 && lastYMove == -1) {
+            lastXMove = xMove;
+            lastYMove = yMove;
+        }
+        currentStatus = STATUS_MOVE;
+        movedDistanceX = xMove - lastXMove;
+        movedDistanceY = yMove - lastYMove;
+        // 进行边界检查，不允许将图片拖出边界
+        if (totalTranslateX + movedDistanceX > 0) {
+            movedDistanceX = 0;
+        } else if (width - (totalTranslateX + movedDistanceX) > currentBitmapWidth) {
+            movedDistanceX = 0;
+        }
+        if (totalTranslateY + movedDistanceY > 0) {
+            movedDistanceY = 0;
+        } else if (height - (totalTranslateY + movedDistanceY) > currentBitmapHeight) {
+            movedDistanceY = 0;
+        }
+        // 调用onDraw()方法绘制图片
+        invalidate();
+        lastXMove = xMove;
+        lastYMove = yMove;
     }
 
     @Override
@@ -229,28 +308,7 @@ public class InfiniteImage extends ImageView implements SensorEventListener{
                     // 只有单指按在屏幕上移动时，为拖动状态
                     float xMove = event.getX();
                     float yMove = event.getY();
-                    if (lastXMove == -1 && lastYMove == -1) {
-                        lastXMove = xMove;
-                        lastYMove = yMove;
-                    }
-                    currentStatus = STATUS_MOVE;
-                    movedDistanceX = xMove - lastXMove;
-                    movedDistanceY = yMove - lastYMove;
-                    // 进行边界检查，不允许将图片拖出边界
-                    if (totalTranslateX + movedDistanceX > 0) {
-                        movedDistanceX = 0;
-                    } else if (width - (totalTranslateX + movedDistanceX) > currentBitmapWidth) {
-                        movedDistanceX = 0;
-                    }
-                    if (totalTranslateY + movedDistanceY > 0) {
-                        movedDistanceY = 0;
-                    } else if (height - (totalTranslateY + movedDistanceY) > currentBitmapHeight) {
-                        movedDistanceY = 0;
-                    }
-                    // 调用onDraw()方法绘制图片
-                    invalidate();
-                    lastXMove = xMove;
-                    lastYMove = yMove;
+                    calculate(xMove, yMove);
                 } else if (event.getPointerCount() == 2) {
                     // 有两个手指按在屏幕上移动时，为缩放状态
                     centerPointBetweenFingers(event);
@@ -457,5 +515,12 @@ public class InfiniteImage extends ImageView implements SensorEventListener{
         centerPointX = (xPoint0 + xPoint1) / 2;
         centerPointY = (yPoint0 + yPoint1) / 2;
     }
+
+    Runnable   runnableUi=new  Runnable(){
+        @Override
+        public void run() {
+            invalidate();
+        }
+    };
 
 }
