@@ -7,6 +7,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.icu.util.LocaleData;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -35,7 +36,9 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener,S
     private int gridViewWidth;
     private SensorManager mSensorManager;
     private Sensor mOrientationSensor;
-    private Sensor mProximitySensor;
+    private int lastX = 0, lastY = 0;
+    private int moveX = -1;
+    private int width = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,19 +53,15 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener,S
         mLinearLayout = findViewById(R.id.full_screen);
         mHorizontal.setSmoothScrollingEnabled(true);
 
-
-        mHorizontal.setVisibility(View.VISIBLE);
-        changeGridView();
-
+        WindowManager wm = (WindowManager) this.getSystemService(Context.WINDOW_SERVICE);
+        width = wm.getDefaultDisplay().getWidth();
         mLinearLayout.setOnTouchListener(this);
     }
 
     public void initSensor() {
         mSensorManager = (SensorManager) this.getSystemService(Context.SENSOR_SERVICE);
         mOrientationSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION);
-        mProximitySensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mSensorManager.registerListener(this, mOrientationSensor, SensorManager.SENSOR_DELAY_NORMAL);
-        mSensorManager.registerListener(this, mProximitySensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     /**
@@ -92,7 +91,9 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener,S
                 new ViewTreeObserver.OnGlobalLayoutListener() {
                     @Override
                     public void onGlobalLayout() {
-                        mHorizontal.smoothScrollTo(gridViewWidth/2 -  dip2px(100), 0);
+                        // TODO: 计算一下 如何获取中间值
+                        lastX = gridViewWidth + width;
+                        mHorizontal.smoothScrollTo(lastX/2, 0);
                     }
                 }
         );
@@ -109,9 +110,14 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener,S
             case MotionEvent.ACTION_DOWN:
                 mHorizontal.setVisibility(View.VISIBLE);
                 changeGridView();
+//                initSensor();
                 break;
             case MotionEvent.ACTION_UP:
                 mHorizontal.setVisibility(View.GONE);
+                if (mSensorManager != null){
+                    mSensorManager.unregisterListener(this);
+                    mSensorManager = null;
+                }
                 break;
         }
         return true;
@@ -119,11 +125,40 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener,S
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
+        switch (sensorEvent.sensor.getType()) {
+            case Sensor.TYPE_ORIENTATION:
+                int xValue = (int) Math.abs(sensorEvent.values[0]);
+                int zValue = (int) Math.abs(sensorEvent.values[2]);
+                int yValue = (int) Math.abs(sensorEvent.values[1]);
+                checkRotateDirection(xValue, yValue, zValue);
+                break;
+        }
+    }
 
+    private void checkRotateDirection(int X, int Y, int Z) {
+        int i = gridViewWidth / 270;
+        int j = gridViewWidth / 270;
+        calculate(X * i, Y * j);
+    }
+
+    private void calculate(int X, int Y) {
+        if (moveX == -1){
+            moveX = X;
+            return;
+        }
+        int movedDistanceX = X - moveX;
+        if (lastX + movedDistanceX < 0 || lastX + movedDistanceX > gridViewWidth - width){
+            moveX = X;
+            return;
+        }
+        lastX = lastX + movedDistanceX;
+        mHorizontal.smoothScrollTo(lastX , 0);
+        moveX = X;
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
 
     }
+
 }
