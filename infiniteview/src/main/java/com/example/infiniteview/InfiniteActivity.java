@@ -92,7 +92,7 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener,S
                     @Override
                     public void onGlobalLayout() {
                         // TODO: 计算一下 如何获取中间值
-                        lastX = gridViewWidth + width;
+                        lastX = gridViewWidth - width;
                         mHorizontal.smoothScrollTo(lastX/2, 0);
                     }
                 }
@@ -110,7 +110,7 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener,S
             case MotionEvent.ACTION_DOWN:
                 mHorizontal.setVisibility(View.VISIBLE);
                 changeGridView();
-//                initSensor();
+                initSensor();
                 break;
             case MotionEvent.ACTION_UP:
                 mHorizontal.setVisibility(View.GONE);

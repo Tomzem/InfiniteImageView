@@ -7,7 +7,7 @@
     android:id="@+id/full_screen"
     android:orientation="horizontal"
     tools:context=".InfiniteActivity"
-    android:background="#000">
+    android:background="#0000">
 
     <HorizontalScrollView
         android:id="@+id/horizontal"

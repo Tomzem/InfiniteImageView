@@ -196,7 +196,7 @@ public class InfiniteImage extends ImageView implements SensorEventListener {
     public void setImageURI(Uri uri) {
         try {
             sourceBitmap = MediaStore.Images.Media.getBitmap(mContext.getContentResolver(), uri);
-            handler.post(runnableUi);
+            handler.post(runnableUi); 
         } catch (IOException e) {
             e.printStackTrace();
             setImageResources(R.drawable.ic_no_image);
