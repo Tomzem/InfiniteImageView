@@ -93,10 +93,18 @@ public class AppInfosAdapter extends BaseAdapter {
         if(appInfo.isSelect() == true){
             viewHolder.itemLayout.setBackgroundColor(Color.RED);
         } else {
-            viewHolder.itemLayout.setBackgroundColor(Color.BLACK);
+            viewHolder.itemLayout.setBackgroundColor(context.getResources().getColor(R.color.transparent));
         }
 
         return convertView;
+    }
+
+    public void setSelectItem(int position){
+        for (AppInfo appInfo : appInfos){
+            appInfo.setSelect(false);
+        }
+        appInfos.get(position).setSelect(true);
+        this.notifyDataSetChanged();
     }
 
     private class ViewHolder{

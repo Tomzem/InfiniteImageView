@@ -6,8 +6,7 @@
     android:layout_height="match_parent"
     android:id="@+id/full_screen"
     android:orientation="horizontal"
-    tools:context=".InfiniteActivity"
-    android:background="#0000">
+    tools:context=".InfiniteActivity">
 
     <HorizontalScrollView
         android:id="@+id/horizontal"

@@ -3,7 +3,8 @@
     package="com.example.infiniteview">
 
     <application>
-        <activity android:name=".InfiniteActivity"></activity>
+        <activity android:name=".InfiniteActivity"
+            android:theme="@style/Transparent"></activity>
     </application>
 
 </manifest>

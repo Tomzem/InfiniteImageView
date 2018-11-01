@@ -27,7 +27,7 @@ import com.example.infiniteview.utils.AppUtils;
 
 import java.util.List;
 
-public class InfiniteActivity extends Activity implements View.OnTouchListener,SensorEventListener {
+public class InfiniteActivity extends Activity implements View.OnTouchListener, SensorEventListener {
     private static final String TAG = "InfiniteActivity";
 
     private GridView appList;
@@ -36,9 +36,16 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener,S
     private int gridViewWidth;
     private SensorManager mSensorManager;
     private Sensor mOrientationSensor;
-    private int lastX = 0, lastY = 0;
+    private int currentX = 0, lastY = 0;
     private int moveX = -1;
     private int width = 0;
+    private int scrollWidth = 0;
+    private int LineAppSize = 0;// 一行APP的个数
+    private int itemWidth = 0;
+    private AppInfosAdapter appInfosAdapter;
+    private int selectItemPosition = 0; //选中的位置
+    private boolean isRun = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,13 +77,14 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener,S
     private void changeGridView() {
         List<AppInfo> appInfos = AppUtils.getAppInfoList(this);
         // item宽度
-        int itemWidth = dip2px(85);
+        itemWidth = dip2px(85);
         // item之间的间隔
         int itemPaddingH = dip2px(1);
-        int size = appInfos.size()/4;
+        LineAppSize = appInfos.size() / 3;
         // 计算GridView宽度
-        gridViewWidth = size * (itemWidth + itemPaddingH);
-        appInfos.get(size/2).setSelect(true);
+        gridViewWidth = LineAppSize * (itemWidth + itemPaddingH);
+//        appInfos.get(LineAppSize/2).setSelect(true);
+
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 gridViewWidth, LinearLayout.LayoutParams.MATCH_PARENT);
@@ -84,16 +92,21 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener,S
         appList.setColumnWidth(itemWidth);
         appList.setHorizontalSpacing(itemPaddingH);
         appList.setStretchMode(GridView.NO_STRETCH);
-        appList.setNumColumns(size);
-        AppInfosAdapter appInfosAdapter = new AppInfosAdapter(this, appInfos);
+        appList.setNumColumns(LineAppSize);
+        appInfosAdapter = new AppInfosAdapter(this, appInfos);
         appList.setAdapter(appInfosAdapter);
+        selectItemPosition = LineAppSize / 2 + LineAppSize;
+        appInfosAdapter.setSelectItem(selectItemPosition);
         mHorizontal.getViewTreeObserver().addOnGlobalLayoutListener(
                 new ViewTreeObserver.OnGlobalLayoutListener() {
                     @Override
                     public void onGlobalLayout() {
-                        // TODO: 计算一下 如何获取中间值
-                        lastX = gridViewWidth - width;
-                        mHorizontal.smoothScrollTo(lastX/2, 0);
+                        if (isRun) {
+                            isRun = false;
+                            scrollWidth = gridViewWidth - width;
+                            currentX = scrollWidth / 2;
+                            mHorizontal.smoothScrollTo(currentX, 0);
+                        }
                     }
                 }
         );
@@ -106,7 +119,7 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener,S
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
-        switch (motionEvent.getAction()){
+        switch (motionEvent.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mHorizontal.setVisibility(View.VISIBLE);
                 changeGridView();
@@ -114,14 +127,17 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener,S
                 break;
             case MotionEvent.ACTION_UP:
                 mHorizontal.setVisibility(View.GONE);
-                if (mSensorManager != null){
+                if (mSensorManager != null) {
                     mSensorManager.unregisterListener(this);
                     mSensorManager = null;
+                    resetData();
+                    isRun = true;
                 }
                 break;
         }
         return true;
     }
+
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
@@ -141,19 +157,49 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener,S
         calculate(X * i, Y * j);
     }
 
+    private int lastItemWidth = 0;
+
     private void calculate(int X, int Y) {
-        if (moveX == -1){
+        // 会切换到最又边
+        if (moveX == -1) {
             moveX = X;
             return;
         }
+        // 移动距离
         int movedDistanceX = X - moveX;
-        if (lastX + movedDistanceX < 0 || lastX + movedDistanceX > gridViewWidth - width){
-            moveX = X;
-            return;
+
+        // 判断 与上次item 距离  切换item选中
+        currentX = currentX + movedDistanceX;
+        if (lastItemWidth == 0) {
+            lastItemWidth = currentX;
         }
-        lastX = lastX + movedDistanceX;
-        mHorizontal.smoothScrollTo(lastX , 0);
+        // 如果 currentX < lastItemWidth 向右移动  item - 1
+        int disparity = lastItemWidth - currentX;
+        if (Math.abs(disparity) > itemWidth/2){
+            if (disparity < 0){
+                if (selectItemPosition%LineAppSize == 0){
+                    return;
+                }
+                selectItemPosition += 1;
+            }else{
+                if (selectItemPosition%LineAppSize == 1){
+                    return;
+                }
+                selectItemPosition -= 1;
+            }
+            appInfosAdapter.setSelectItem(selectItemPosition);
+            lastItemWidth = currentX;
+        }
+
+        mHorizontal.smoothScrollTo(currentX, 0);
+
         moveX = X;
+    }
+
+    private void resetData() {
+        moveX = -1;
+        currentX = gridViewWidth - width;
+        lastItemWidth = 0;
     }
 
     @Override
