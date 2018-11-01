@@ -24,6 +24,7 @@ public class AppInfosAdapter extends BaseAdapter {
 
     Context context;
     List<AppInfo> appInfos;
+    private AppInfo appInfoSelect;
 
     public AppInfosAdapter(){}
 
@@ -104,7 +105,12 @@ public class AppInfosAdapter extends BaseAdapter {
             appInfo.setSelect(false);
         }
         appInfos.get(position).setSelect(true);
+        appInfoSelect = appInfos.get(position);
         this.notifyDataSetChanged();
+    }
+
+    public AppInfo getSelectItem(){
+        return appInfoSelect ;
     }
 
     private class ViewHolder{

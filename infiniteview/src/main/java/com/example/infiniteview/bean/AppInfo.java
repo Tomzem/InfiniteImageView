@@ -10,16 +10,18 @@ import android.graphics.drawable.Drawable;
 public class AppInfo {
     private String appName;
     private String packageName;
+    private String className;
     private Drawable drawable;
     private boolean isSelect;
 
     public AppInfo() {
     }
 
-    public AppInfo(String appName, String packageName, Drawable drawable) {
+    public AppInfo(String appName, String packageName, String className, Drawable drawable) {
         this.appName = appName;
         this.packageName = packageName;
         this.drawable = drawable;
+        this.className = className;
     }
 
     public String getAppName() {
@@ -52,5 +54,13 @@ public class AppInfo {
 
     public void setSelect(boolean select) {
         isSelect = select;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
     }
 }

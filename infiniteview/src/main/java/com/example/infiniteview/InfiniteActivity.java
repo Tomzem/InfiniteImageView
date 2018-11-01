@@ -83,8 +83,6 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener, 
         LineAppSize = appInfos.size() / 3;
         // 计算GridView宽度
         gridViewWidth = LineAppSize * (itemWidth + itemPaddingH);
-//        appInfos.get(LineAppSize/2).setSelect(true);
-
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 gridViewWidth, LinearLayout.LayoutParams.MATCH_PARENT);
@@ -133,6 +131,10 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener, 
                     resetData();
                     isRun = true;
                 }
+                AppInfo appInfo = appInfosAdapter.getSelectItem();
+                if (appInfo != null){
+                    AppUtils.goToAnotherApp(this, appInfo);
+                }
                 break;
         }
         return true;
@@ -175,7 +177,7 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener, 
         }
         // 如果 currentX < lastItemWidth 向右移动  item - 1
         int disparity = lastItemWidth - currentX;
-        if (Math.abs(disparity) > itemWidth/2){
+        if (Math.abs(disparity) > itemWidth){
             if (disparity < 0){
                 if (selectItemPosition%LineAppSize == 0){
                     return;
