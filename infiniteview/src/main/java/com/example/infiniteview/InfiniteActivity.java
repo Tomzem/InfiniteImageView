@@ -104,6 +104,7 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener, 
                             scrollWidth = gridViewWidth - width;
                             currentX = scrollWidth / 2;
                             mHorizontal.smoothScrollTo(currentX, 0);
+
                         }
                     }
                 }
@@ -194,7 +195,6 @@ public class InfiniteActivity extends Activity implements View.OnTouchListener, 
         }
 
         mHorizontal.smoothScrollTo(currentX, 0);
-
         moveX = X;
     }
 
